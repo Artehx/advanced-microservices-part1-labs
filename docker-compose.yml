@@ -1,0 +1,96 @@
+name: advms-part1
+services:
+  inventory:
+    build:
+      context: .
+      dockerfile: services/inventory/Dockerfile
+    environment:
+      APP_VERSION: p1-baseline
+      TRAINING_INVENTORY_DELAY_MS: ${TRAINING_INVENTORY_DELAY_MS:-0}
+    ports:
+      - "127.0.0.1:8081:8080"
+    healthcheck:
+      test: ["CMD","curl","-fsS","http://localhost:8080/actuator/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+  orders:
+    build:
+      context: .
+      dockerfile: services/orders/Dockerfile
+    environment:
+      APP_VERSION: p1-baseline
+      INVENTORY_BASE_URL: http://inventory:8080
+      TRAINING_SHIPPING_BASE_URL: http://shipping:8080
+    depends_on:
+      inventory:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8082:8080"
+    healthcheck:
+      test: ["CMD","curl","-fsS","http://localhost:8080/actuator/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+  api-gateway:
+    build:
+      context: .
+      dockerfile: services/api-gateway/Dockerfile
+    environment:
+      ORDERS_URL: http://orders:8080
+      INVENTORY_URL: http://inventory:8080
+      PAYMENTS_URL: http://payments:8080
+      SHIPPING_URL: http://shipping:8080
+      NOTIFICATIONS_URL: http://notifications:8080
+    depends_on:
+      orders:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8080:8080"
+    healthcheck:
+      test: ["CMD","curl","-fsS","http://localhost:8080/actuator/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+  payments:
+    profiles: ["extended"]
+    build:
+      context: .
+      dockerfile: services/payments/Dockerfile
+    environment:
+      APP_VERSION: p1-baseline
+    ports:
+      - "127.0.0.1:8083:8080"
+    healthcheck:
+      test: ["CMD","curl","-fsS","http://localhost:8080/actuator/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+  shipping:
+    profiles: ["extended"]
+    build:
+      context: .
+      dockerfile: services/shipping/Dockerfile
+    environment:
+      APP_VERSION: p1-baseline
+    ports:
+      - "127.0.0.1:8084:8080"
+    healthcheck:
+      test: ["CMD","curl","-fsS","http://localhost:8080/actuator/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+  notifications:
+    profiles: ["extended"]
+    build:
+      context: .
+      dockerfile: services/notifications/Dockerfile
+    environment:
+      APP_VERSION: p1-baseline
+    ports:
+      - "127.0.0.1:8085:8080"
+    healthcheck:
+      test: ["CMD","curl","-fsS","http://localhost:8080/actuator/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 30

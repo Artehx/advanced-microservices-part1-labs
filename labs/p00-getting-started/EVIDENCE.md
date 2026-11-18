@@ -1,0 +1,11 @@
+# P00 — Registro de evidencias
+- Rama y SHA:
+- Java / Maven / Docker:
+- make preflight:
+- make test:
+- make verify:
+- Servicios saludables:
+- Preview cantidad 2:
+- Preview cantidad 43:
+- Diagrama y responsabilidades:
+- Incidencias y cómo las resolví:

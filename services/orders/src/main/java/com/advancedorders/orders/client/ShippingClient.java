@@ -13,8 +13,14 @@ public class ShippingClient {
     }
 
     public ShippingQuote quote(String destination, int weightGrams) {
-        // TODO P01: GET /api/shipping/quote with destination and weightGrams.
-        // Deserialize ShippingQuote; reject empty response and translate remote failure.
-        throw new UnsupportedOperationException("P01: implement ShippingClient.quote");
+        try {
+            ShippingQuote result = client.get().uri(u -> u.path("/api/shipping/quote")
+                .queryParam("destination",destination).queryParam("weightGrams",weightGrams).build())
+                .retrieve().body(ShippingQuote.class);
+            if(result==null) throw new ShippingUnavailableException("Empty shipping response",null);
+            return result;
+        } catch(org.springframework.web.client.RestClientException ex) {
+            throw new ShippingUnavailableException("Shipping call failed",ex);
+        }
     }
 }

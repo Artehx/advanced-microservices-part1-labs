@@ -22,6 +22,9 @@ public class InventoryController {
     @Value("${training.inventory.delay-ms:0}")
     private long trainingDelayMs;
 
+    @Value("${training.inventory.fail:false}")
+    private boolean trainingFail;
+
     private final InventoryCatalog catalog;
     private final InstanceMetadata instanceMetadata;
 
@@ -36,6 +39,10 @@ public class InventoryController {
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "Unknown SKU: " + sku));
 
+        if (trainingFail) {
+            log.warn("P02 simulated HTTP 503 sku={}", sku);
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Training fault");
+        }
         long delay = Math.max(0, Math.min(3000, trainingDelayMs));
         if (delay > 0) {
             log.warn("P07 simulated dependency latency sku={} delayMs={}", sku, delay);

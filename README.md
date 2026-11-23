@@ -1,6 +1,6 @@
 # Advanced Orders Platform — Microservicios avanzados, Parte 1
 
-**Checkpoint P00/P01.** Comienza por P00 y desarrolla P01 desde los TODOs.
+**Checkpoint P02.** Continúa con [P02 — Resiliencia](labs/p02-resilience/README.md). Los ejercicios previos tienen su código de recuperación incluido; no necesitas haber completado cada TODO anterior.
 
 ## Antes de comenzar
 Lee la [guía general del alumno](labs/GUIA-ALUMNO.md) para acceder, preparar Codespaces, guardar cambios y avanzar entre checkpoints.
@@ -16,7 +16,8 @@ Sigue el enunciado de tu práctica para arrancar el overlay correcto. El entorno
 
 ## Guías disponibles en este checkpoint
 - [P00 — Primer contacto](labs/p00-getting-started/README.md)
-- [P01 — Estimación de pedido](labs/p01-architecture/README.md) **(actual)**
+- [P01 — Estimación de pedido](labs/p01-architecture/README.md)
+- [P02 — Resiliencia](labs/p02-resilience/README.md) **(actual)**
 
 ## Entorno y cierre
 - P00/P01: `make up` inicia Gateway, Orders e Inventory; `make p01-up` añade Shipping. `make down` detiene el entorno base y extended.
@@ -27,4 +28,4 @@ Sigue el enunciado de tu práctica para arrancar el overlay correcto. El entorno
 
 ## Enunciados de todo el curso
 
-Consulta el [índice de P00–P07](docs/enunciados/README.md) desde el primer día. **Los enunciados están disponibles antes que el código:** las implementaciones, los TODO y la solución de la práctica anterior se liberan por checkpoints. No intentes ejecutar una práctica cuyo código todavía no se ha publicado.
+Consulta el [índice de P00–P07](docs/enunciados/README.md) desde el primer día. Los enunciados están disponibles antes de su código; los starters y las soluciones anteriores se entregan por checkpoints.

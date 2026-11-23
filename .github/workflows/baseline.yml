@@ -20,3 +20,17 @@ jobs:
       - run: make verify
       - if: always()
         run: make down
+  tag-p02-release:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Release student checkpoint p02'
+    needs: regression
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Tag audited P02 release commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api -X POST "repos/$GITHUB_REPOSITORY/git/refs" \
+            -f ref='refs/tags/checkpoint-p02' \
+            -f sha="$GITHUB_SHA"

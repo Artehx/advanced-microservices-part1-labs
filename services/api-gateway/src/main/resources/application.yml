@@ -14,6 +14,12 @@ spring:
               uri: ${INVENTORY_URL:http://localhost:8081}
               predicates:
                 - Path=/api/inventory/**
+            - id: stock-alias
+              uri: ${INVENTORY_URL:http://localhost:8081}
+              predicates:
+                - Path=/stock/{sku}
+              filters:
+                - SetPath=/api/inventory/{sku}
             - id: payments
               uri: ${PAYMENTS_URL:http://localhost:8083}
               predicates:

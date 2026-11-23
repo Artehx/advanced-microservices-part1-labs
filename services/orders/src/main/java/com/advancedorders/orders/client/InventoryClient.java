@@ -7,12 +7,18 @@ import org.springframework.web.client.RestClientException;
 @Component
 public class InventoryClient {
     private final RestClient restClient;
+    private final InventoryResilience resilience;
 
-    public InventoryClient(RestClient inventoryRestClient) {
+    public InventoryClient(RestClient inventoryRestClient, InventoryResilience resilience) {
         this.restClient = inventoryRestClient;
+        this.resilience = resilience;
     }
 
     public InventorySnapshot getInventory(String sku) {
+        return resilience.execute(() -> fetch(sku));
+    }
+
+    private InventorySnapshot fetch(String sku) {
         try {
             InventorySnapshot snapshot = restClient.get()
                     .uri("/api/inventory/{sku}", sku)

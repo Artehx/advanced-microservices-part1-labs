@@ -24,3 +24,9 @@ p01-test:
 	mvn -B -pl services/orders -am -Dtest=OrderEstimateExercise -Dsurefire.failIfNoSpecifiedTests=false test
 p01-verify:
 	bash scripts/verify-p01.sh
+
+.PHONY: p02-test p02-verify
+p02-test:
+	mvn -B -pl services/orders -am -Dtest=InventoryResilienceExercise -Dsurefire.failIfNoSpecifiedTests=false test
+p02-verify:
+	bash scripts/verify-p02.sh

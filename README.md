@@ -1,6 +1,6 @@
 # Advanced Orders Platform — Microservicios avanzados, Parte 1
 
-**Checkpoint P02.** Continúa con [P02 — Resiliencia](labs/p02-resilience/README.md). Los ejercicios previos tienen su código de recuperación incluido; no necesitas haber completado cada TODO anterior.
+**Checkpoint P03.** Continúa con [P03 — Kafka](labs/p03-event-driven/README.md). Los ejercicios previos tienen su código de recuperación incluido; no necesitas haber completado cada TODO anterior.
 
 ## Antes de comenzar
 Lee la [guía general del alumno](labs/GUIA-ALUMNO.md) para acceder, preparar Codespaces, guardar cambios y avanzar entre checkpoints.
@@ -17,7 +17,8 @@ Sigue el enunciado de tu práctica para arrancar el overlay correcto. El entorno
 ## Guías disponibles en este checkpoint
 - [P00 — Primer contacto](labs/p00-getting-started/README.md)
 - [P01 — Estimación de pedido](labs/p01-architecture/README.md)
-- [P02 — Resiliencia](labs/p02-resilience/README.md) **(actual)**
+- [P02 — Resiliencia](labs/p02-resilience/README.md)
+- [P03 — Kafka](labs/p03-event-driven/README.md) **(actual)**
 
 ## Entorno y cierre
 - P00/P01: `make up` inicia Gateway, Orders e Inventory; `make p01-up` añade Shipping. `make down` detiene el entorno base y extended.

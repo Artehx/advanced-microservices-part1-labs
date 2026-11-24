@@ -18,7 +18,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.ResourceAccessException;
 
-/** Starter: diagnostics and wiring are provided; students implement policies and composition. */
+/** Explicit decorators: no Spring AOP, no implicit annotation order. */
 @Component
 public class InventoryResilience {
     private static final Logger log = LoggerFactory.getLogger(InventoryResilience.class);
@@ -39,20 +39,30 @@ public class InventoryResilience {
         this.retryEnabled = retryEnabled;
         this.circuitEnabled = circuitEnabled;
         this.bulkheadEnabled = bulkheadEnabled;
-        // TODO P02.2: configure Retry with maxAttempts, wait and transient exception predicate.
-        // TODO P02.3: configure CircuitBreaker count window 4, min 4, failure rate 50%, openMs, 2 half-open probes; ignore permanent failures.
-        // TODO P02.4: configure Bulkhead maxConcurrent, zero wait.
-        // Defaults only allow diagnostics to start; protections are not wired below.
-        circuit = CircuitBreaker.ofDefaults("inventory");
-        retry = Retry.ofDefaults("inventory");
-        bulkhead = Bulkhead.ofDefaults("inventory");
+        circuit = CircuitBreaker.of("inventory", CircuitBreakerConfig.custom()
+                .slidingWindowSize(4).minimumNumberOfCalls(4).failureRateThreshold(50)
+                .waitDurationInOpenState(Duration.ofMillis(openMs))
+                .permittedNumberOfCallsInHalfOpenState(2)
+                .ignoreException(ex -> !isTransient(ex))
+                .build());
+        retry = Retry.of("inventory", RetryConfig.custom()
+                .maxAttempts(maxAttempts).waitDuration(Duration.ofMillis(retryWait))
+                .retryOnException(InventoryResilience::isTransient).build());
+        bulkhead = Bulkhead.of("inventory", BulkheadConfig.custom()
+                .maxConcurrentCalls(maxConcurrent).maxWaitDuration(Duration.ZERO).build());
         circuit.getEventPublisher().onStateTransition(e -> log.info("inventory circuit {}", e.getStateTransition()));
         retry.getEventPublisher().onRetry(e -> log.info("inventory retry attempt={}", e.getNumberOfRetryAttempts()));
         bulkhead.getEventPublisher().onCallRejected(e -> log.warn("inventory bulkhead rejected"));
     }
 
     static boolean isTransient(Throwable ex) {
-        // TODO P02.2: unwrap cause; retry transport and selected 502/503/504 only.
+        if (!(ex instanceof InventoryUnavailableException)) return false;
+        Throwable cause = ex.getCause();
+        if (cause instanceof ResourceAccessException) return true;
+        if (cause instanceof HttpServerErrorException http) {
+            int status = http.getStatusCode().value();
+            return status == 502 || status == 503 || status == 504;
+        }
         return false;
     }
 
@@ -61,8 +71,11 @@ public class InventoryResilience {
             attempts.incrementAndGet();
             return request.get();
         };
-        // TODO P02.2–4: conditionally decorate call with Retry, CircuitBreaker and Bulkhead.
-        // Choose order and explain which unit the circuit counts and which permit bulkhead holds.
+        // Inner circuit sees each actual attempt; outer retry may try again.
+        // Outer bulkhead holds a permit for the entire logical operation.
+        if (circuitEnabled) call = CircuitBreaker.decorateSupplier(circuit, call);
+        if (retryEnabled) call = Retry.decorateSupplier(retry, call);
+        if (bulkheadEnabled) call = Bulkhead.decorateSupplier(bulkhead, call);
         return call.get();
     }
 

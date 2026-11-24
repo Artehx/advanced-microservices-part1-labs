@@ -16,8 +16,9 @@ public class HttpClientConfig {
     RestClient inventoryRestClient(RestClient.Builder builder, InventoryClientProperties properties,
             @Value("${training.resilience.connect-ms:1000}") long connectMs,
             @Value("${training.resilience.read-ms:5000}") long readMs) {
-        // TODO P02.1: build JDK HttpClient with connect timeout, configure request factory
-        // with read timeout and attach to RestClient.Builder.
-        return builder.baseUrl(properties.baseUrl().toString()).build();
+        HttpClient http = HttpClient.newBuilder().connectTimeout(Duration.ofMillis(connectMs)).build();
+        JdkClientHttpRequestFactory factory = new JdkClientHttpRequestFactory(http);
+        factory.setReadTimeout(Duration.ofMillis(readMs));
+        return builder.baseUrl(properties.baseUrl().toString()).requestFactory(factory).build();
     }
 }

@@ -30,3 +30,11 @@ p02-test:
 	mvn -B -pl services/orders -am -Dtest=InventoryResilienceExercise -Dsurefire.failIfNoSpecifiedTests=false test
 p02-verify:
 	bash scripts/verify-p02.sh
+
+.PHONY: p03-up p03-verify p03-down
+p03-up:
+	bash scripts/p03-up.sh
+p03-verify:
+	bash scripts/verify-p03.sh
+p03-down:
+	docker compose -f docker-compose.yml -f compose.kafka.yml --profile extended down

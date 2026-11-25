@@ -38,3 +38,13 @@ p03-verify:
 	bash scripts/verify-p03.sh
 p03-down:
 	docker compose -f docker-compose.yml -f compose.kafka.yml --profile extended down
+
+.PHONY: p04-up p04-test p04-verify p04-down
+p04-up:
+	bash scripts/p04-up.sh
+p04-test:
+	mvn -B -pl services/orders -am -Dtest=OrderStateExercise -Dsurefire.failIfNoSpecifiedTests=false test
+p04-verify:
+	bash scripts/verify-p04.sh
+p04-down:
+	docker compose -f docker-compose.yml -f compose.state.yml --profile extended down

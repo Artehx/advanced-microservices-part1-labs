@@ -33,9 +33,18 @@ public class OrderEventPublisher {
             event.sku() == null || event.sku().isBlank() || event.quantity() < 1) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid event");
         }
-        // TODO P03: serialize event, send to TOPIC with orderId as key, await broker ACK.
-        // Return 202 with eventId, topic, partition, offset, status=BROKER_ACKNOWLEDGED.
-        // Handle interruption and uncertain publication outcome without claiming no record was written.
-        throw new ResponseStatusException(HttpStatus.NOT_IMPLEMENTED, "P03: implement publication");
+        try {
+            var result = kafka.send(TOPIC, event.orderId(), json.writeValueAsString(event))
+                    .get(12, TimeUnit.SECONDS);
+            var meta = result.getRecordMetadata();
+            return ResponseEntity.accepted().body(Map.of("eventId", event.eventId(),
+                    "topic", meta.topic(), "partition", meta.partition(), "offset", meta.offset(),
+                    "status", "BROKER_ACKNOWLEDGED"));
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Publication interrupted", ex);
+        } catch (Exception ex) {
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Publication result unavailable", ex);
+        }
     }
 }

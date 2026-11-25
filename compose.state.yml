@@ -1,0 +1,38 @@
+# P04: separate logical service schemas in one training PostgreSQL instance.
+services:
+  postgres:
+    image: postgres:17.6
+    environment:
+      POSTGRES_DB: advms
+      POSTGRES_USER: lab
+      POSTGRES_PASSWORD: lab-local-only
+    volumes:
+      - p04-state:/var/lib/postgresql/data
+      - ./labs/p04-state/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL","pg_isready -U lab -d advms"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+  orders:
+    environment:
+      TRAINING_STATE_ENABLED: "true"
+      TRAINING_STATE_DB: jdbc:postgresql://postgres:5432/advms
+      TRAINING_STATE_USER: lab
+      TRAINING_STATE_PASSWORD: lab-local-only
+      TRAINING_STATE_INVENTORY_URL: http://inventory:8080
+      TRAINING_STATE_PAYMENTS_URL: http://payments:8080
+  inventory:
+    environment:
+      TRAINING_STATE_ENABLED: "true"
+      TRAINING_STATE_DB: jdbc:postgresql://postgres:5432/advms
+      TRAINING_STATE_USER: lab
+      TRAINING_STATE_PASSWORD: lab-local-only
+  payments:
+    environment:
+      TRAINING_STATE_ENABLED: "true"
+      TRAINING_STATE_DB: jdbc:postgresql://postgres:5432/advms
+      TRAINING_STATE_USER: lab
+      TRAINING_STATE_PASSWORD: lab-local-only
+volumes:
+  p04-state:

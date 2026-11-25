@@ -22,11 +22,14 @@ public class OrderEventConsumer {
     public OrderEventConsumer(ObjectMapper json) { this.json = json; }
     public record OrderCreated(String eventId, String orderId, String sku, int quantity) {}
 
-    // TODO P03: register listener for orders.created.v1, group notifications-p03.
+    @KafkaListener(topics="orders.created.v1", groupId="notifications-p03")
     public void consume(ConsumerRecord<String, String> record) {
-        // TODO: deserialize JSON, increment received, log key/partition/offset.
-        // TODO: apply simulated effect once per eventId (even if delivered twice).
-        throw new UnsupportedOperationException("P03: implement listener");
+        OrderCreated event = json.readValue(record.value(), OrderCreated.class);
+        int deliveries = received.computeIfAbsent(event.eventId(), k -> new AtomicInteger()).incrementAndGet();
+        log.info("eventId={} key={} partition={} offset={} deliveries={}", event.eventId(), record.key(),
+                record.partition(), record.offset(), deliveries);
+        // Idempotent simulated effect within this process; not durable deduplication.
+        effects.putIfAbsent(event.eventId(), new AtomicInteger(1));
     }
 
     public Map<String, Object> snapshot(String eventId) {

@@ -1,0 +1,17 @@
+syntax = "proto3";
+package advancedorders.shipping.v1;
+option java_package = "com.advancedorders.shipping.rpc";
+option java_multiple_files = true;
+
+service ShippingQuotes {
+  rpc Quote (QuoteRequest) returns (QuoteReply);
+}
+message QuoteRequest {
+  string destination = 1;
+  int32 weight_grams = 2;
+}
+message QuoteReply {
+  string destination = 1;
+  int32 weight_grams = 2;
+  // TODO P05: add price_cents, currency, estimated_days, provider with stable field numbers 3..6.
+}

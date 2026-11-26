@@ -1,6 +1,7 @@
 package com.advancedorders.shipping.api;
 
 import org.springframework.http.HttpStatus;
+import com.advancedorders.shipping.domain.ShippingPricing;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -17,11 +18,11 @@ public class ShippingController {
     @GetMapping("/quote")
     public ShippingQuote quote(@RequestParam(defaultValue = "ES") String destination,
                                 @RequestParam(defaultValue = "500") int weightGrams) {
-        if (!destination.matches("[A-Z]{2}") || weightGrams < 1 || weightGrams > 10000) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid destination or weightGrams");
+        try {
+            var q=ShippingPricing.quote(destination,weightGrams);
+            return new ShippingQuote(q.destination(),q.weightGrams(),q.priceCents(),q.currency(),q.estimatedDays(),q.provider());
+        } catch(IllegalArgumentException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,e.getMessage());
         }
-        boolean domestic = destination.equals("ES");
-        long price = domestic ? (weightGrams <= 2000 ? 499 : 899) : 1499;
-        return new ShippingQuote(destination, weightGrams, price, "EUR", domestic ? 3 : 7, "SIMULATED");
     }
 }

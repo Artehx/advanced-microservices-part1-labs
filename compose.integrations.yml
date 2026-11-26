@@ -1,0 +1,16 @@
+# P05: internal plaintext gRPC and optional local webhook signature.
+services:
+  shipping:
+    environment:
+      TRAINING_GRPC_ENABLED: "true"
+      TRAINING_GRPC_PORT: 9090
+      TRAINING_GRPC_DELAY_MS: ${P05_GRPC_DELAY_MS:-0}
+  orders:
+    environment:
+      TRAINING_GRPC_ENABLED: "true"
+      TRAINING_GRPC_HOST: shipping
+      TRAINING_GRPC_PORT: 9090
+  notifications:
+    environment:
+      TRAINING_WEBHOOK_ENABLED: "true"
+      TRAINING_WEBHOOK_SECRET: ${P05_WEBHOOK_SECRET:-}

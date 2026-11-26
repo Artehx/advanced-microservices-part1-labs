@@ -48,3 +48,11 @@ p04-verify:
 	bash scripts/verify-p04.sh
 p04-down:
 	docker compose -f docker-compose.yml -f compose.state.yml --profile extended down
+
+.PHONY: p05-up p05-verify p05-down
+p05-up:
+	docker compose -f docker-compose.yml -f compose.integrations.yml --profile extended up -d --build --wait inventory shipping notifications orders api-gateway
+p05-verify:
+	bash scripts/verify-p05.sh
+p05-down:
+	docker compose -f docker-compose.yml -f compose.integrations.yml --profile extended down

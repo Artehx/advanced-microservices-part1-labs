@@ -42,9 +42,32 @@ public class OrderStateController {
     public record Payment(String orderId,boolean decline) {}
     static State fold(String id,List<Event> events) {
         if(events.isEmpty()) throw new ResponseStatusException(HttpStatus.NOT_FOUND,"Unknown order");
-        // TODO P04.1: validate versions and transitions, reconstruct status and preserve creation data.
-        // Pure function: no DB, HTTP, clock or external side effects.
-        throw new UnsupportedOperationException("P04: implement fold");
+        Event first=events.get(0);
+        String status="NONE";
+        int expected=1;
+        for(Event e:events){
+            if(e.version()!=expected++ || !Objects.equals(e.sku(),first.sku()) || e.quantity()!=first.quantity() || e.decline()!=first.decline())
+                throw new IllegalStateException("Invalid event history");
+            boolean allowed=switch(status){
+                case "NONE" -> e.kind().equals("CREATED");
+                case "NEW" -> Set.of("RESERVED","RESERVATION_REJECTED").contains(e.kind());
+                case "RESERVED" -> Set.of("PAYMENT_APPROVED","PAYMENT_DECLINED").contains(e.kind());
+                case "PAID" -> e.kind().equals("CONFIRMED");
+                case "PAYMENT_FAILED" -> e.kind().equals("RELEASED");
+                default -> false;
+            };
+            if(!allowed) throw new IllegalStateException("Invalid transition "+status+" / "+e.kind());
+            status=switch(e.kind()){
+                case "CREATED" -> "NEW";
+                case "RESERVED" -> "RESERVED";
+                case "RESERVATION_REJECTED","RELEASED" -> "CANCELLED";
+                case "PAYMENT_APPROVED" -> "PAID";
+                case "PAYMENT_DECLINED" -> "PAYMENT_FAILED";
+                case "CONFIRMED" -> "CONFIRMED";
+                default -> throw new IllegalStateException("Unknown event");
+            };
+        }
+        return new State(id,first.sku(),first.quantity(),first.decline(),status,expected-1);
     }
     private List<Event> history(Connection c,String id) throws SQLException {
         var events=new ArrayList<Event>();
@@ -116,10 +139,25 @@ public class OrderStateController {
     @PostMapping("/{id}/advance")
     public synchronized State advance(@PathVariable String id) throws SQLException {
         State s=aggregate(id);
-        // TODO P04.3: choose next action from state, interpret participant response,
-        // append event only after confirmed outcome; compensate failed payment; terminal is no-op.
-        // Use reserve/decidePayment/release and recordTransition. Never hold DB transaction across HTTP.
-        throw new UnsupportedOperationException("P04: implement saga");
+        String kind=switch(s.status()){
+            case "NEW" -> switch(reserve(s)){
+                case "RESERVED" -> "RESERVED";
+                case "REJECTED" -> "RESERVATION_REJECTED";
+                default -> throw new IllegalStateException("Unexpected reservation status");
+            };
+            case "RESERVED" -> switch(decidePayment(s)){
+                case "APPROVED" -> "PAYMENT_APPROVED";
+                case "DECLINED" -> "PAYMENT_DECLINED";
+                default -> throw new IllegalStateException("Unexpected payment status");
+            };
+            case "PAID" -> "CONFIRMED";
+            case "PAYMENT_FAILED" -> {
+                if(!"RELEASED".equals(release(s))) throw new IllegalStateException("Release not confirmed");
+                yield "RELEASED";
+            }
+            default -> null;
+        };
+        return kind==null?s:recordTransition(s,kind);
     }
     @GetMapping("/{id}/query")
     public Map<String,Object> query(@PathVariable String id) throws SQLException {
@@ -133,10 +171,11 @@ public class OrderStateController {
     }
     @PostMapping("/{id}/project")
     public synchronized Map<String,Object> project(@PathVariable String id) throws SQLException {
-        // TODO P04.2: rebuild State from events, insert/update read_model with mapped fields.
-        // Prevent older version from overwriting newer projection. Return query(id).
-        // Use parameterized SQL and try-with-resources. No external effects during replay.
-        throw new UnsupportedOperationException("P04: implement projection");
+        State s=aggregate(id);
+        try(var c=connect();var q=c.prepareStatement("INSERT INTO orders.read_model(order_id,sku,quantity,status,version) VALUES(?,?,?,?,?) ON CONFLICT(order_id) DO UPDATE SET sku=EXCLUDED.sku,quantity=EXCLUDED.quantity,status=EXCLUDED.status,version=EXCLUDED.version WHERE orders.read_model.version < EXCLUDED.version")){
+            q.setString(1,id);q.setString(2,s.sku());q.setInt(3,s.quantity());q.setString(4,s.status());q.setInt(5,s.version());q.executeUpdate();
+        }
+        return query(id);
     }
     @DeleteMapping("/{id}/projection")
     public synchronized void clearProjection(@PathVariable String id) throws SQLException {

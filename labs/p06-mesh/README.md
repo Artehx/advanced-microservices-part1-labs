@@ -1,5 +1,5 @@
 # P06 — Advanced Orders Platform: diseñar balanceo y políticas de Service Mesh
-**CORE · O6.** Prerrequisito: conocer servicios, contenedores y comunicación HTTP de P00–P05. Checkpoint independiente. No se necesita Gateway público, Kafka ni PostgreSQL.
+**CORE · O6.** Checkpoint de trabajo; utiliza el entorno confirmado por el instructor. Prerrequisito: conocer servicios, contenedores y comunicación HTTP de P00–P05. Checkpoint independiente. No se necesita Gateway público, Kafka ni PostgreSQL.
 
 ## 1. Contexto y decisiones arquitectónicas
 El equipo quiere desplegar una nueva versión de Inventory sin enviarle todo el tráfico de golpe. Kubernetes permite ejecutar varias réplicas y descubrirlas mediante un Service, pero el equipo necesita controlar qué versión recibe una petición, probar una versión candidata y poder revertir una política de tráfico sin reescribir Java. En este ejercicio v1 y v2 ejecutan la misma lógica: solo cambia la metadata APP_VERSION. Es un simulador de routing, no una release con cambios funcionales reales.
@@ -27,16 +27,25 @@ flowchart LR
 | `scripts/p06-linkerd-prepare.sh` | Preparación local aislada de kind, Linkerd e imágenes |
 
 ## 2. Preflight y entorno AKS
-Antes de obtener credenciales, verifica `az --version`, `kubectl version --client`, `kubelogin --version`, `kind version` y `linkerd version --client`. Si faltan herramientas, reconstruye el devcontainer de P06 (Azure CLI incluida) y ejecuta `P06_KUBECTL_VERSION=v1.34.0 bash scripts/p06-tools.sh` solo si esa versión es la confirmada por el instructor; si te indica otra compatible, utiliza su valor. Añade a la terminal `export PATH="$HOME/.local/bin:$HOME/.linkerd2/bin:$PATH"`. El script instala CLI únicamente; no inicia sesión ni toca clusters. El instructor proporciona instrucciones de autenticación y kubeconfig del alumno.
+Puedes reutilizar el Codespace de P00–P05: no reconstruyas el devcontainer ni borres tus cambios anteriores. Una vez incorporados los archivos de P06, instala las herramientas con el script siguiente (Azure CLI se instala si falta). El instructor confirma la versión de kubectl; para esta edición, v1.35.0 es compatible con AKS 1.36 y kind 1.34.
+
+```bash
+P06_KUBECTL_VERSION=v1.35.0 bash scripts/p06-tools.sh
+export PATH="$HOME/.local/bin:$HOME/.linkerd2/bin:$PATH"
+```
+
+El script instala CLI únicamente; no inicia sesión ni toca clusters. Verifica las versiones que muestra. El instructor proporciona instrucciones de autenticación y kubeconfig del alumno.
 **No ejecutar la sección AKS hasta que el instructor confirme que la Parte 2 ha terminado y que se han preparado tus permisos, namespace e imágenes.** Utiliza solo el namespace asignado. El instructor proporciona el contexto, la revisión real de Istio (no reutilices una revisión antigua sin comprobar) y los valores exactos de INVENTORY_IMAGE/ORDERS_IMAGE de Parte 1. Si no se cumplen los requisitos, no improvises permisos ni despliegues: sigue el piloto guiado que indique el instructor.
 
 ```bash
-export NS=studentXX # sustituye por tu namespace asignado
+export NS=studentXX # sustituye por tu namespace asignado (student01..student27)
 export P06_CONTEXT=aks-advms26-course
 # Define INVENTORY_IMAGE, ORDERS_IMAGE e ISTIO_REV con los valores entregados.
 : "${INVENTORY_IMAGE:?falta imagen Inventory}" "${ORDERS_IMAGE:?falta imagen Orders}" "${ISTIO_REV:?falta revision Istio}"
 kubectl --context "$P06_CONTEXT" -n "$NS" auth can-i create deployments
 kubectl --context "$P06_CONTEXT" -n "$NS" auth can-i create services
+kubectl --context "$P06_CONTEXT" -n "$NS" auth can-i patch deployments.apps
+kubectl --context "$P06_CONTEXT" -n "$NS" auth can-i create pods --subresource=exec
 kubectl --context "$P06_CONTEXT" -n "$NS" auth can-i create virtualservices.networking.istio.io
 kubectl --context "$P06_CONTEXT" -n "$NS" auth can-i create destinationrules.networking.istio.io
 ```
@@ -73,16 +82,16 @@ done
 kubectl --context "$P06_CONTEXT" -n "$NS" get pods -o wide
 kubectl --context "$P06_CONTEXT" -n "$NS" get pods -l app=p06-orders -o yaml
 ```
-Comprueba los proxies en los tres Pods, incluyendo initContainer nativo con restartPolicy Always si se utiliza ese modo. No sigas hasta tener proxy Ready en origen y destinos.
+Comprueba los proxies en los tres Pods, incluyendo initContainer nativo con restartPolicy Always si se utiliza ese modo. No sigas hasta tener proxy Ready en origen y destinos. En el AKS ensayado `istio-proxy` es un native sidecar dentro de `initContainers`; el Pod muestra 2/2 Ready. Si el instructor pide escalonar la inyección, respeta el turno.
 
-Completa istio.yaml: host p06-inventory, subsets v1/v2 con labels reales version, pesos 100/0. Aplica:
+Completa istio.yaml: host p06-inventory, subsets v1/v2 con labels reales version, pesos 100/0. Conserva `exportTo: ["."]` en ambos recursos y `gateways: [mesh]`: las políticas de admisión de este AKS exigen configuración local al namespace. No apliques el starter con labels TODO. Aplica:
 ```bash
 kubectl --context "$P06_CONTEXT" -n "$NS" apply -f labs/p06-mesh/istio.yaml
 kubectl --context "$P06_CONTEXT" -n "$NS" get virtualservice p06-inventory -o yaml
 kubectl --context "$P06_CONTEXT" -n "$NS" get destinationrule p06-inventory -o yaml
 bash scripts/p06-sample.sh "$NS" 40
 ```
-Tras propagación, espera solo v1. Si no coincide, revisa proxy origen, labels, host y estado antes de repetir. Modifica YAML a 80/20, aplica y toma 100 muestras; espera proporción aproximada, no exactamente 80/20. Después cambia a 0/100 y prueba 40: solo v2. Restaura 100/0. Guarda las evidencias de las tres políticas. No uses una muestra de 100 como garantía de SLO.
+Tras propagación, espera solo v1. Si no coincide, revisa proxy origen, labels, host y estado antes de repetir. Modifica YAML a 80/20, aplica y toma 100 muestras; espera proporción aproximada, no exactamente 80/20. Después cambia a 0/100 y prueba 40: solo v2. Restaura 100/0, aplica y toma otras 40 muestras; deben llegar a v1. Comprueba que los nombres de los tres Pods no han cambiado. Guarda las evidencias de las tres políticas. No uses una muestra de 100 como garantía de SLO.
 
 ```mermaid
 flowchart LR

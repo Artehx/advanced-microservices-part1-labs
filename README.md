@@ -1,6 +1,6 @@
 # Advanced Orders Platform — Microservicios avanzados, Parte 1
 
-**Checkpoint P06.** Continúa con [P06 — Service Mesh](labs/p06-mesh/README.md). Los ejercicios previos tienen código de recuperación incluido; guarda tu trabajo anterior.
+**Checkpoint P07.** Continúa con [P07 — Incidente integrador](labs/p07-incident/README.md). Este checkpoint contiene una regresión deliberada; guarda tu trabajo previo.
 
 ## Antes de comenzar
 Lee la [guía general del alumno](labs/GUIA-ALUMNO.md) para acceder, preparar Codespaces, guardar cambios y avanzar entre checkpoints.
@@ -22,7 +22,11 @@ Sigue el enunciado de tu práctica para arrancar el overlay correcto. El entorno
 
 - [P04 — Estado, CQRS, Event Sourcing y Saga](labs/p04-state/README.md)
 - [P05 — Webhooks y gRPC](labs/p05-integrations/README.md)
-- [P06 — Service Mesh](labs/p06-mesh/README.md) **(actual)**
+
+- [P06 — Service Mesh](labs/p06-mesh/README.md)
+- [P07 — Incidente integrador](labs/p07-incident/README.md) **(actual)**
+
+P06 es independiente y no necesitas AKS ni kind para P07.
 
 ## Entorno y cierre
 - P00/P01: `make up` inicia Gateway, Orders e Inventory; `make p01-up` añade Shipping. `make down` detiene el entorno base y extended.
@@ -33,4 +37,8 @@ Sigue el enunciado de tu práctica para arrancar el overlay correcto. El entorno
 
 ## Enunciados de todo el curso
 
-Consulta el [índice de P00–P07](docs/enunciados/README.md) desde el primer día. Los enunciados están disponibles antes de su código; los starters y las soluciones anteriores se entregan por checkpoints.
+[Índice de P00–P07](docs/enunciados/README.md).
+
+## Soluciones de cierre
+
+La rama `soluciones-finales` contiene el código resuelto P01–P07 y los manifiestos de referencia P06. Usa primero `main` si quieres reproducir el incidente P07; consulta la solución después del intento.

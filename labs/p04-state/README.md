@@ -1,5 +1,5 @@
 # P04 — Advanced Orders Platform: diseñar e implementar Event Sourcing, CQRS y Saga
-**CORE · O4.** Práctica del alumno. Prerrequisito: P01–P03 y conceptos de transacción local. Este checkpoint incluye P03 resuelto, PostgreSQL, esquema, persistencia JDBC y participantes de Saga preparados. El alumno implementa las tres piezas centrales: reconstrucción del agregado, proyección y coordinación/compensación. No necesita Azure ni un Kafka activo.
+**CORE · O4.** Prerrequisito: P01–P03 y conceptos de transacción local. Este checkpoint incluye P03 resuelto, PostgreSQL, esquema, persistencia JDBC y participantes de Saga preparados. El alumno implementa las tres piezas centrales: reconstrucción del agregado, proyección y coordinación/compensación. No necesita Azure ni un Kafka activo.
 
 ## 1. Contexto y modelado
 Hasta ahora una consulta de Orders solo comprobaba disponibilidad y P03 publicaba un evento simulado. Ahora producto quiere **crear un pedido persistente**, reservar stock, solicitar una decisión de pago y confirmar o cancelar el pedido. La reserva de Inventory y la decisión de Payments son operaciones que pueden tener éxito o fallar independientemente. Una transacción de Orders no puede hacer rollback de una operación HTTP confirmada en otro servicio.

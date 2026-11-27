@@ -33,9 +33,14 @@ public class WebhookController {
         if(raw.length>8192)throw new ResponseStatusException(HttpStatus.PAYLOAD_TOO_LARGE,"Training payload limit");
         if(!secret.isBlank() && !validSignature(raw,signature))
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,"Invalid signature");
-        // TODO P05: deserialize raw JSON, validate event contract, count every delivery
-        // and implement a single effect per eventId. Return stats for accepted event.
-        throw new ResponseStatusException(HttpStatus.NOT_IMPLEMENTED,"P05: implement webhook");
+        Event e;
+        try{e=json.readValue(raw,Event.class);}catch(Exception ex){throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Invalid JSON");}
+        if(e==null || e.eventId()==null || !e.eventId().matches("[A-Za-z0-9-]{1,64}") ||
+            !"shipping.delivered".equals(e.type()) || e.orderId()==null || e.orderId().isBlank())
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Invalid event");
+        received.computeIfAbsent(e.eventId(),k->new AtomicInteger()).incrementAndGet();
+        effects.putIfAbsent(e.eventId(),new AtomicInteger(1));
+        return stats(e.eventId());
     }
     @GetMapping("/{id}")
     public Map<String,Object> stats(@PathVariable String id){

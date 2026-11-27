@@ -24,9 +24,20 @@ public class ShippingRpcServer {
     @PostConstruct void start() throws IOException {
         server=NettyServerBuilder.forPort(port).addService(new ShippingQuotesGrpc.ShippingQuotesImplBase(){
             @Override public void quote(QuoteRequest request,StreamObserver<QuoteReply> observer){
-                // TODO P05: validate/calculate with ShippingPricing, construct reply, onNext/onCompleted.
-                // Honor simulated delay and cancellation; translate invalid argument.
-                observer.onError(Status.UNIMPLEMENTED.withDescription("P05: implement Quote").asRuntimeException());
+                try {
+                    var q=ShippingPricing.quote(request.getDestination(),request.getWeightGrams());
+                    if(delayMs>0) Thread.sleep(delayMs);
+                    if(Context.current().isCancelled()) return;
+                    observer.onNext(QuoteReply.newBuilder().setDestination(q.destination())
+                        .setWeightGrams(q.weightGrams()).setPriceCents(q.priceCents())
+                        .setCurrency(q.currency()).setEstimatedDays(q.estimatedDays()).setProvider(q.provider()).build());
+                    observer.onCompleted();
+                } catch(IllegalArgumentException e) {
+                    observer.onError(Status.INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
+                } catch(InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    observer.onError(Status.CANCELLED.asRuntimeException());
+                }
             }
         }).build().start();
     }

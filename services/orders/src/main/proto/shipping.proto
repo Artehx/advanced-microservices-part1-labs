@@ -13,5 +13,8 @@ message QuoteRequest {
 message QuoteReply {
   string destination = 1;
   int32 weight_grams = 2;
-  // TODO P05: add price_cents, currency, estimated_days, provider with stable field numbers 3..6.
+  int64 price_cents = 3;
+  string currency = 4;
+  int32 estimated_days = 5;
+  string provider = 6;
 }

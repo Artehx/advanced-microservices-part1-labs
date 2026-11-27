@@ -1,0 +1,103 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: p06-inventory-v1
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: p06-inventory, version: v1}
+  template:
+    metadata:
+      labels: {app: p06-inventory, version: v1}
+    spec:
+      containers:
+      - name: inventory
+        image: __INVENTORY_IMAGE__
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: http
+          containerPort: 8080
+        env:
+        - name: APP_VERSION
+          value: "v1"
+        resources:
+          requests: {cpu: 100m, memory: 192Mi}
+          limits: {cpu: 500m, memory: 512Mi}
+        readinessProbe:
+          httpGet: {path: /actuator/health/readiness, port: http}
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        livenessProbe:
+          httpGet: {path: /actuator/health/liveness, port: http}
+          initialDelaySeconds: 20
+          periodSeconds: 10
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: p06-inventory-v2
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: p06-inventory, version: v2}
+  template:
+    metadata:
+      labels: {app: p06-inventory, version: v2}
+    spec:
+      containers:
+      - name: inventory
+        image: __INVENTORY_IMAGE__
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: http
+          containerPort: 8080
+        env:
+        - name: APP_VERSION
+          value: "v2"
+        resources:
+          requests: {cpu: 100m, memory: 192Mi}
+          limits: {cpu: 500m, memory: 512Mi}
+        readinessProbe:
+          httpGet: {path: /actuator/health/readiness, port: http}
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        livenessProbe:
+          httpGet: {path: /actuator/health/liveness, port: http}
+          initialDelaySeconds: 20
+          periodSeconds: 10
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: p06-orders
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: p06-orders, version: v1}
+  template:
+    metadata:
+      labels: {app: p06-orders, version: v1}
+    spec:
+      containers:
+      - name: orders
+        image: __ORDERS_IMAGE__
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: http
+          containerPort: 8080
+        env:
+        - name: APP_VERSION
+          value: "v1"
+        - name: INVENTORY_BASE_URL
+          value: http://p06-inventory:8080
+        resources:
+          requests: {cpu: 100m, memory: 192Mi}
+          limits: {cpu: 500m, memory: 512Mi}
+        readinessProbe:
+          httpGet: {path: /actuator/health/readiness, port: http}
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        livenessProbe:
+          httpGet: {path: /actuator/health/liveness, port: http}
+          initialDelaySeconds: 20
+          periodSeconds: 10

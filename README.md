@@ -1,6 +1,6 @@
 # Advanced Orders Platform — Microservicios avanzados, Parte 1
 
-**Checkpoint P05.** Continúa con [P05 — Webhooks y gRPC](labs/p05-integrations/README.md). Los ejercicios previos tienen código de recuperación incluido; guarda tu trabajo anterior.
+**Checkpoint P06.** Continúa con [P06 — Service Mesh](labs/p06-mesh/README.md). Los ejercicios previos tienen código de recuperación incluido; guarda tu trabajo anterior.
 
 ## Antes de comenzar
 Lee la [guía general del alumno](labs/GUIA-ALUMNO.md) para acceder, preparar Codespaces, guardar cambios y avanzar entre checkpoints.
@@ -21,7 +21,8 @@ Sigue el enunciado de tu práctica para arrancar el overlay correcto. El entorno
 - [P03 — Kafka](labs/p03-event-driven/README.md)
 
 - [P04 — Estado, CQRS, Event Sourcing y Saga](labs/p04-state/README.md)
-- [P05 — Webhooks y gRPC](labs/p05-integrations/README.md) **(actual)**
+- [P05 — Webhooks y gRPC](labs/p05-integrations/README.md)
+- [P06 — Service Mesh](labs/p06-mesh/README.md) **(actual)**
 
 ## Entorno y cierre
 - P00/P01: `make up` inicia Gateway, Orders e Inventory; `make p01-up` añade Shipping. `make down` detiene el entorno base y extended.

@@ -1,5 +1,5 @@
 # P05 — Advanced Orders Platform: diseñar e implementar Webhooks y gRPC
-**CORE · O5.** Práctica del alumno. Prerrequisito: P01–P04 y comunicación HTTP. El checkpoint incluye P04 resuelto y los esqueletos de las integraciones. No requiere Azure, Kafka ni PostgreSQL activo.
+**CORE · O5.** Prerrequisito: P01–P04 y comunicación HTTP. El checkpoint incluye P04 resuelto y los esqueletos de las integraciones. No requiere Azure, Kafka ni PostgreSQL activo.
 
 ## 1. Contexto y arquitectura
 El equipo logístico quiere informar a nuestra plataforma cuando un pedido se entrega. El proveedor externo enviará una notificación HTTP a Notifications. Un reintento tras perder la respuesta no debe producir un segundo efecto de negocio. Al mismo tiempo, Orders quiere consultar Shipping mediante un contrato RPC tipado, con una fecha límite para la respuesta.

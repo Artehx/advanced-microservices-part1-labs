@@ -8,7 +8,7 @@ permissions:
 jobs:
   regression:
     runs-on: ubuntu-latest
-    timeout-minutes: 55
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -33,13 +33,15 @@ jobs:
       - run: cmp services/orders/src/main/proto/shipping.proto services/shipping/src/main/proto/shipping.proto
       - run: make p05-up
       - run: make verify
-      - name: P05 starter smoke (expected TODOs)
+      - run: make p05-verify
+      - name: Validate P06 starter files
         run: |
-          set -euo pipefail
-          base=http://127.0.0.1:8080/api
-          curl -fsS "$base/shipping/quote?destination=ES&weightGrams=500" | python3 -c 'import json,sys; assert json.load(sys.stdin)["priceCents"]==499'
-          test "$(curl -sS -o /dev/null -w '%{http_code}' -X POST "$base/notifications/training/webhooks/delivery" -H 'Content-Type: application/json' -d '{"eventId":"ci-p05","type":"shipping.delivered","orderId":"order-01"}')" = 501
-          test "$(curl -sS -o /dev/null -w '%{http_code}' "$base/orders/training/grpc/quote")" = 501
+          for script in scripts/p06-{render,sample,linkerd-prepare,tools}.sh; do bash -n "$script"; done
+          grep -q TODO-select-inventory labs/p06-mesh/service.yaml
+          grep -q TODO-v1 labs/p06-mesh/istio.yaml
+          grep -q TODO labs/p06-mesh/linkerd-route.yaml
+          test -f labs/p06-mesh/workloads.yaml
+          test -f labs/p06-mesh/version-services.yaml
       - if: always()
         run: make p05-down
       - if: always()
@@ -48,17 +50,17 @@ jobs:
         run: make p03-down
       - if: always()
         run: make down
-  tag-p05-release:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Release student checkpoint p05'
+  tag-p06-release:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Release student checkpoint p06'
     needs: regression
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
-      - name: Tag audited P05 release commit
+      - name: Tag audited P06 release commit
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh api -X POST "repos/$GITHUB_REPOSITORY/git/refs" \
-            -f ref='refs/tags/checkpoint-p05' \
+            -f ref='refs/tags/checkpoint-p06' \
             -f sha="$GITHUB_SHA"

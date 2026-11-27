@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: p06-inventory-v1
+spec:
+  selector: {app: p06-inventory, version: v1}
+  ports: [{name: http, port: 8080, targetPort: http}]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: p06-inventory-v2
+spec:
+  selector: {app: p06-inventory, version: v2}
+  ports: [{name: http, port: 8080, targetPort: http}]

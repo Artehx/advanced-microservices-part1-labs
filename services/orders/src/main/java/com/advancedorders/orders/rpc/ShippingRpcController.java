@@ -28,8 +28,22 @@ public class ShippingRpcController {
         @RequestParam(defaultValue="1500") long deadlineMs){
         if(deadlineMs<50 || deadlineMs>5000)
             return ResponseEntity.badRequest().body(Map.of("grpcCode","INVALID_ARGUMENT","message","deadlineMs must be 50..5000"));
-        // TODO P05: build QuoteRequest, call stub with deadline, map reply and gRPC errors to HTTP.
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(Map.of("grpcCode","UNIMPLEMENTED","message","P05: implement RPC client"));
+        try {
+            var req=QuoteRequest.newBuilder().setDestination(destination).setWeightGrams(weightGrams).build();
+            // TODO P05: change the deadline policy and compare with the server delay.
+            var q=stub.withDeadlineAfter(deadlineMs,TimeUnit.MILLISECONDS).quote(req);
+            return ResponseEntity.ok(Map.of("destination",q.getDestination(),"weightGrams",q.getWeightGrams(),
+                "priceCents",q.getPriceCents(),"currency",q.getCurrency(),"estimatedDays",q.getEstimatedDays(),"provider",q.getProvider(),"grpcCode","OK"));
+        } catch(StatusRuntimeException e){
+            var code=e.getStatus().getCode();
+            var http=switch(code){
+                case DEADLINE_EXCEEDED -> HttpStatus.GATEWAY_TIMEOUT;
+                case INVALID_ARGUMENT -> HttpStatus.BAD_REQUEST;
+                case UNAVAILABLE -> HttpStatus.SERVICE_UNAVAILABLE;
+                default -> HttpStatus.BAD_GATEWAY;
+            };
+            return ResponseEntity.status(http).body(Map.of("grpcCode",code.name(),"message","RPC failed"));
+        }
     }
     @PreDestroy void stop(){channel.shutdownNow();}
 }
